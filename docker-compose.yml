@@ -1,0 +1,33 @@
+services:
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: jenkins-controller
+    ports:
+      - "8080:8080"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    networks:
+      - jenkins-net
+
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    container_name: jenkins-agent
+    depends_on:
+      - jenkins
+    environment:
+      JENKINS_URL: http://jenkins:8080
+      JENKINS_AGENT_NAME: remote-agent
+      JENKINS_SECRET: ${AGENT_SECRET}
+      JENKINS_WEB_SOCKET: "true"
+    networks:
+      - jenkins-net
+    # No shared volumes with the controller -> isolated workspace
+    profiles: ["agent"]
+
+volumes:
+  jenkins_home:
+
+networks:
+  jenkins-net:
